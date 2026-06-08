@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>AWGP</title>
+  <style>
+    :root { color-scheme: light dark; --fg: #1d1d1f; --muted: #6e6e73; --bg: #f5f5f7; --card: #fff; --accent: #ff6b35; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fg: #f5f5f7; --muted: #a1a1a6; --bg: #0d0d0f; --card: #1c1c1e; }
+    }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--fg); line-height: 1.45; }
+    .card { max-width: 420px; margin: 0 auto; background: var(--card); border-radius: 16px; padding: 28px 22px 24px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+    .badge { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    h1 { font-size: 1.35rem; font-weight: 700; margin: 0 0 12px; line-height: 1.25; }
+    p.lead { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+    .btn { display: block; text-align: center; text-decoration: none; font-weight: 600; font-size: 16px; padding: 14px 18px; border-radius: 999px; margin-bottom: 12px; }
+    .btn-primary { background: #0a84ff; color: #fff !important; }
+    .btn-store { background: var(--accent); color: #fff !important; }
+    .stores { margin-top: 8px; padding-top: 20px; border-top: 1px solid rgba(128,128,128,.25); }
+    .stores h2 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; }
+    footer { max-width: 420px; margin: 24px auto 0; text-align: center; font-size: 12px; color: var(--muted); }
+    .error { color: #c0392b; }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <p class="lead">Loading…</p>
+  </div>
+  <footer>All World Gayatri Pariwar</footer>
+  <script>
+    (function () {
+      var SCHEME = 'awgp-mobile';
+      var ANDROID_PACKAGE = 'com.shivvtrivedi.awgp';
+      var ANDROID_STORE = 'https://play.google.com/store/apps/details?id=com.shivvtrivedi.awgp';
+      var IOS_STORE = 'https://apps.apple.com/app/id6754517805';
+
+      var PATH_TO_TYPE = {
+        b: { type: 'book', route: 'book', label: 'Book' },
+        book: { type: 'book', route: 'book', label: 'Book' },
+        ab: { type: 'audiobook', route: 'audio-books', label: 'Audiobook' },
+        audiobook: { type: 'audiobook', route: 'audio-books', label: 'Audiobook' },
+        mg: { type: 'magazine', route: 'magazine', label: 'Magazine' },
+        magazine: { type: 'magazine', route: 'magazine', label: 'Magazine' },
+        pc: { type: 'podcast', route: 'podcasts', label: 'Podcast' },
+        podcasts: { type: 'podcast', route: 'podcasts', label: 'Podcast' }
+      };
+
+      function parseRoute() {
+        var params = new URLSearchParams(location.search);
+        var queryKeys = ['b', 'ab', 'mg', 'pc'];
+        for (var i = 0; i < queryKeys.length; i++) {
+          var key = queryKeys[i];
+          var id = params.get(key);
+          if (id && PATH_TO_TYPE[key]) {
+            return { meta: PATH_TO_TYPE[key], id: id.trim() };
+          }
+        }
+
+        var parts = location.pathname.split('/').filter(Boolean);
+        if (parts.length >= 2) {
+          var seg = parts[parts.length - 2].toLowerCase();
+          var id = decodeURIComponent(parts[parts.length - 1]);
+          var meta = PATH_TO_TYPE[seg];
+          if (meta && id) return { meta: meta, id: id };
+        }
+        var params2 = new URLSearchParams(location.search);
+        var type = (params2.get('type') || '').toLowerCase();
+        var id = (params2.get('id') || '').trim();
+        var meta = PATH_TO_TYPE[type] || PATH_TO_TYPE[type === 'audiobook' ? 'ab' : type];
+        if (meta && id) return { meta: meta, id: id };
+        return null;
+      }
+
+      function buildDeepLink(route, id) {
+        return SCHEME + '://' + route + '/' + id;
+      }
+
+      function buildOpenUrl(route, id) {
+        var deepLink = buildDeepLink(route, id);
+        var isAndroid = /android/i.test(navigator.userAgent);
+        if (isAndroid) {
+          var path = route + '/' + id;
+          return 'intent://' + path + '#Intent;scheme=' + SCHEME + ';package=' + ANDROID_PACKAGE +
+            ';S.browser_fallback_url=' + encodeURIComponent(ANDROID_STORE) + ';end';
+        }
+        return deepLink;
+      }
+
+      function renderError(message) {
+        document.getElementById('card').innerHTML =
+          '<p class="error">' + message + '</p>' +
+          (ANDROID_STORE ? '<a class="btn btn-store" href="' + ANDROID_STORE + '">Get AWGP on Google Play</a>' : '') +
+          (IOS_STORE ? '<a class="btn btn-store" href="' + IOS_STORE + '">Get AWGP on the App Store</a>' : '');
+      }
+
+      function render(payload) {
+        var title = new URLSearchParams(location.search).get('title') || payload.meta.label + ' in AWGP';
+        var openUrl = buildOpenUrl(payload.meta.route, payload.id);
+        var iosBtn = IOS_STORE
+          ? '<a class="btn btn-store" href="' + IOS_STORE + '" rel="noopener">Download on the App Store</a>'
+          : '';
+        var andBtn = ANDROID_STORE
+          ? '<a class="btn btn-store" href="' + ANDROID_STORE + '" rel="noopener">Get it on Google Play</a>'
+          : '';
+
+        document.title = title + ' · AWGP';
+        document.getElementById('card').innerHTML =
+          '<div class="badge">' + payload.meta.label + '</div>' +
+          '<h1>' + title.replace(/</g, '&lt;') + '</h1>' +
+          '<p class="lead">Install AWGP first if you do not have it. After installing, return here and tap <strong>Open in app</strong>.</p>' +
+          '<div class="stores"><h2>Get the app</h2>' + iosBtn + andBtn + '</div>' +
+          '<a class="btn btn-primary" href="' + openUrl.replace(/"/g, '&quot;') + '">Open in AWGP app</a>';
+      }
+
+      var payload = parseRoute();
+      if (!payload) {
+        renderError('This share link is incomplete or expired.');
+        return;
+      }
+      render(payload);
+    })();
+  </script>
+</body>
+</html>
