@@ -1,0 +1,11 @@
+Live site: https://awgp.link/ and https://awgp.app/.
+
+Push this repository to main. The Update live website workflow refreshes the
+private Railway website from all three public repositories. It checks that the
+exact commit is visible on both custom domains before completing.
+
+Credential: AWGP_WEBSITE_RAILWAY_TOKEN, scoped to the awgp-web project and
+production environment. The app code stays in the private app repository.
+
+Existing GitHub Pages deployments keep old bookmarks working with redirects
+that preserve paths, query parameters, and fragments.
